@@ -195,7 +195,7 @@ body.light .trigger-note code { background: #eaeef2; }
 </head>
 <body>
 <h1>🧬 科研仪表盘</h1>
-<div class="sub">2026-05-25 22:21 · GitHub Pages</div>
+<div class="sub">2026-05-25 22:27 · GitHub Pages</div>
 
 <div class="tabs">
   <button class="tab active" data-tab="fg" onclick="switchTab('fg')">FG 日报</button>
@@ -382,8 +382,8 @@ function paperCardHTML(p, showDate, dateStr){
   var absUrl=aid&&!p.doi?'https://arxiv.org/abs/'+aid:'';
   if(p.doi){pdfUrl='https://doi.org/'+p.doi;absUrl=pdfUrl;}
   var rating=getRating(aid),faved=isFaved(aid);
-  var starsH='';for(var s=1;s<=5;s++)starsH+='<span class="star'+(s<=rating?' lit':'')+'">★</span>';
-  var fc=faved?' faved':'', ft=faved?'❤ 已收藏':'♡ 收藏';
+  var starsH='';for(var s=1;s<=5;s++)starsH+='<span class="star'+(s<=rating?' lit':'')+'">\u2605</span>';
+  var fc=faved?' faved':'', ft=faved?'\u2764 已收藏':'\u2661 收藏';
   var coreH=p.core?esc(p.core):'<span class="empty-field">（暂无）</span>';
   var absH=p.abstract?esc(p.abstract):'<span class="empty-field">（暂无翻译）</span>';
   var reasonH=p.reason?esc(p.reason):'<span class="empty-field">（暂无）</span>';
@@ -511,24 +511,22 @@ function toggleTheme(){
 })();
 
 // ═══ Trigger paper scout ═══
+var TRIGGER_MODE = 'local';
 (function initTrigger(){
   var bar = document.getElementById('trigger-bar');
   if (!bar) return;
+  bar.classList.add('visible');
   var host = window.location.hostname;
   var isLocal = (host === 'localhost' || host === '127.0.0.1' || host.match(/^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.)/));
   if (isLocal) {
-    bar.classList.add('visible');
+    TRIGGER_MODE = 'local';
     document.getElementById('trigger-note').innerHTML =
-      '手机在同一 WiFi 下访问 <code>' + host + ':8080</code> 即可使用';
+      '📡 局域网即时模式 · 手机访问 <code>' + host + ':8080</code>';
   } else {
-    bar.classList.add('nonlocal');
-    var note = document.getElementById('trigger-note');
-    note.innerHTML = '⚠️ GitHub Pages 无法直连本地 · 请在电脑浏览器打开' +
-      ' <a href="https://david0050.github.io/dashboard/" style="color:#58a6ff">david0050.github.io/dashboard</a>' +
-      ' 查看完整仪表盘';
-    // Hide button
-    var btn = document.getElementById('trigger-btn');
-    if (btn) btn.style.display = 'none';
+    TRIGGER_MODE = 'github';
+    document.getElementById('trigger-note').innerHTML =
+      '🌐 GitHub Issue 模式 · 点击后跳转 GitHub 提交 Issue 触发';
+    document.getElementById('trigger-btn').textContent = '📡 触发文献推送（GitHub Issue）';
   }
 })();
 
@@ -536,6 +534,19 @@ function triggerPaperScout(){
   var btn = document.getElementById('trigger-btn');
   var status = document.getElementById('trigger-status');
   if (!btn || !status) return;
+
+  if (TRIGGER_MODE === 'github') {
+    var now = new Date().toISOString().replace('T',' ').substring(0,19);
+    var title = encodeURIComponent('[TRIGGER] paper-scout');
+    var body = encodeURIComponent('触发时间：' + now);
+    var url = 'https://github.com/DAVID0050/dashboard/issues/new' +
+      '?title=' + title + '&body=' + body + '&labels=trigger';
+    status.textContent = '正在跳转 GitHub...';
+    status.className = 'trigger-status success';
+    window.open(url, '_blank');
+    setTimeout(function(){ status.textContent = ''; }, 3000);
+    return;
+  }
 
   btn.classList.add('loading');
   btn.textContent = '⏳ 正在触发...';
@@ -549,7 +560,7 @@ function triggerPaperScout(){
       btn.classList.remove('loading');
       if (data.ok) {
         btn.textContent = '✅ 已触发！';
-        status.textContent = '任务已排队，将在下次轮询时执行（最多 1 小时延迟）';
+        status.textContent = '等待 automation 轮询（≤1 小时）';
         status.className = 'trigger-status success';
         setTimeout(function(){
           btn.textContent = '📡 触发文献推送';
