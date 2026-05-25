@@ -101,17 +101,71 @@ h1 { font-size: 1.3em; margin: 2px 0 0; color: #f0f6fc; font-weight:700; }
 
 .empty { color:#484f58; text-align:center; padding:60px 20px; font-size:0.95em; }
 .footer { text-align:center; color:#484f58; font-size:0.7em; margin-top:28px; padding:14px; border-top:1px solid #21262d; }
+
+/* Settings */
+.settings-panel { padding:12px 0; }
+.setting-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid #21262d; }
+.setting-label { color:#c9d1d9; font-size:0.88em; }
+.setting-value { color:#8b949e; font-size:0.82em; }
+.setting-btn {
+  background:#21262d; border:1px solid #30363d; border-radius:6px;
+  color:#c9d1d9; padding:6px 14px; font-size:0.82em; cursor:pointer;
+}
+.setting-btn.danger { color:#da3633; border-color:#da3633; }
+.setting-btn:hover { background:#30363d; }
+.toggle-switch { position:relative; width:44px; height:24px; cursor:pointer; }
+.toggle-switch input { opacity:0; width:0; height:0; }
+.toggle-slider { position:absolute; top:0;left:0;right:0;bottom:0; background:#30363d; border-radius:24px; transition:.2s; }
+.toggle-slider:before { position:absolute; content:''; height:18px;width:18px; left:3px;bottom:3px; background:#c9d1d9; border-radius:50%; transition:.2s; }
+input:checked+.toggle-slider { background:#58a6ff; }
+input:checked+.toggle-slider:before { transform:translateX(20px); }
+
+/* Light theme */
+body.light { background:#ffffff; color:#24292f; }
+body.light h1 { color:#1f2328; }
+body.light .sub { color:#656d76; }
+body.light .tabs { border-bottom-color:#d0d7de; }
+body.light .tab { color:#656d76; }
+body.light .tab.active { color:#0969da; border-bottom-color:#0969da; }
+body.light .tab:hover { color:#1f2328; }
+body.light .fg-entry { border-bottom-color:#d0d7de; }
+body.light .fg-date { color:#0969da; }
+body.light .fg-text { color:#656d76; }
+body.light .fg-toggle { color:#0969da; }
+body.light .swipe-card { background:#f6f8fa; border-color:#d0d7de; }
+body.light .swipe-bg { background:#da3633; }
+body.light .paper-title { color:#1f2328; }
+body.light .paper-meta { color:#656d76; }
+body.light .paper-meta a { color:#0969da; }
+body.light .paper-authors { color:#656d76; }
+body.light .paper-field-label { color:#8b949e; }
+body.light .paper-field-text { color:#24292f; }
+body.light .paper-actions { border-top-color:#d0d7de; }
+body.light .fav-btn { border-color:#d0d7de; color:#656d76; }
+body.light .star { color:#d0d7de; }
+body.light .date-sep { color:#d0d7de; }
+body.light .date-sep span { background:#ffffff; }
+body.light .empty { color:#8b949e; }
+body.light .footer { color:#8b949e; border-top-color:#d0d7de; }
+body.light .setting-row { border-bottom-color:#d0d7de; }
+body.light .setting-label { color:#1f2328; }
+body.light .setting-btn { background:#f6f8fa; border-color:#d0d7de; color:#24292f; }
+body.light .setting-btn:hover { background:#eaeef2; }
+body.light .date-chip { background:#f6f8fa; border-color:#d0d7de; }
+body.light .date-chip.active { background:#ddf4ff; border-color:#0969da; }
+body.light .ptr-indicator { color:#8b949e; }
 </style>
 </head>
 <body>
 <h1>🧬 科研仪表盘</h1>
-<div class="sub">2026-05-25 18:09 · GitHub Pages</div>
+<div class="sub">2026-05-25 18:17 · GitHub Pages</div>
 
 <div class="tabs">
   <button class="tab active" data-tab="fg" onclick="switchTab('fg')">FG 日报</button>
   <button class="tab" data-tab="papers" onclick="switchTab('papers')">arxiv 推送</button>
   <button class="tab" data-tab="prx" onclick="switchTab('prx')">PRX Life</button>
   <button class="tab" data-tab="favs" onclick="switchTab('favs')">收藏</button>
+  <button class="tab" data-tab="settings" onclick="switchTab('settings')">设置</button>
 </div>
 
 <div id="panel-fg" class="panel active"><div class="fg-entry"><div class="fg-date">baseline</div><div class="fg-text" id="fg-baseline">FG 基线扫描 - 2026-05-25
@@ -121,6 +175,22 @@ h1 { font-size: 1.3em; margin: 2px 0 0; color: #f0f6fc; font-weight:700; }
 <div id="panel-papers" class="panel"><div class="ptr-indicator"></div><div id="paper-list"><div class="empty">加载中...</div></div></div>
 <div id="panel-prx" class="panel"><div class="ptr-indicator"></div><div id="prx-list"><div class="empty">加载中...</div></div></div>
 <div id="panel-favs" class="panel"><div id="fav-list"><div class="empty">还没有收藏任何论文</div></div></div>
+<div id="panel-settings" class="panel">
+  <div class="settings-panel">
+    <div class="setting-row">
+      <span class="setting-label">浅色主题</span>
+      <label class="toggle-switch"><input type="checkbox" onchange="toggleTheme()"><span class="toggle-slider"></span></label>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">清除本地数据</span>
+      <button class="setting-btn danger" onclick="clearAllData()">清除评分/收藏/删除记录</button>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">数据说明</span>
+      <span class="setting-value">评分和收藏存在浏览器本地</span>
+    </div>
+  </div>
+</div>
 
 <div class="footer">Dashboard v3 · <a href="https://david0050.github.io/dashboard/" style="color:#484f58">david0050.github.io/dashboard</a></div>
 
@@ -376,6 +446,24 @@ function renderFavs(){
 }
 
 function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ═══ Settings ═══
+function clearAllData(){
+  if(confirm('确定清除所有本地数据？（评分、收藏、删除记录）')){
+    localStorage.removeItem(STORAGE_KEY);
+    refreshActivePanel();
+  }
+}
+
+function toggleTheme(){
+  var isLight=document.body.classList.toggle('light');
+  localStorage.setItem('dashboard_theme', isLight?'light':'dark');
+}
+
+// init theme
+(function(){
+  if(localStorage.getItem('dashboard_theme')==='light') document.body.classList.add('light');
+})();
 </script>
 <script>document.addEventListener("DOMContentLoaded",function(){renderArxiv();renderPrx();});</script>
 </body>
