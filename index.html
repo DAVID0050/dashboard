@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>科研仪表盘</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
+  background: #0d1117; color: #c9d1d9; padding: 16px 12px 40px;
+  max-width: 720px; margin: 0 auto;
+}
+h1 { font-size: 1.4em; margin: 4px 0 2px; color: #f0f6fc; }
+.sub { color: #8b949e; font-size: 0.8em; margin-bottom: 16px; }
+.tabs { display:flex; gap:4px; margin-bottom:20px; border-bottom:1px solid #30363d; }
+.tab {
+  padding: 10px 20px; cursor:pointer; border:none; background:none;
+  color: #8b949e; font-size: 0.95em; border-bottom: 2px solid transparent;
+  transition: all .15s; font-weight:500;
+}
+.tab.active { color: #58a6ff; border-bottom-color: #58a6ff; }
+.tab:hover { color: #c9d1d9; }
+.panel { display:none; }
+.panel.active { display:block; }
+
+/* ── FG 日报 ── */
+.fg-entry {
+  margin-bottom: 16px; padding: 12px 0;
+  border-bottom: 1px solid #21262d;
+}
+.fg-entry:last-child { border-bottom:none; }
+.fg-date { color: #58a6ff; font-weight:600; font-size: 0.95em; margin-bottom: 6px; }
+.fg-text {
+  font-size: 0.88em; line-height: 1.6; white-space: pre-wrap;
+  color: #8b949e; max-height: 6em; overflow:hidden;
+  transition: max-height .3s;
+}
+.fg-text.expanded { max-height: none; }
+.fg-toggle { color: #58a6ff; font-size: 0.8em; cursor:pointer; margin-top: 4px; display:inline-block; }
+
+/* ── 文献推送 ── */
+.date-selector {
+  display:flex; gap:6px; overflow-x:auto; padding:4px 0 14px;
+  -webkit-overflow-scrolling:touch;
+}
+.date-chip {
+  flex-shrink:0; padding:8px 16px; border-radius:16px;
+  background:#161b22; border:1px solid #30363d; color:#8b949e;
+  font-size:0.85em; cursor:pointer; transition:all .15s;
+  white-space:nowrap; min-height:36px; display:inline-flex; align-items:center;
+  user-select:none; -webkit-user-select:none;
+}
+.date-chip.active { background:#1f6feb33; border-color:#58a6ff; color:#58a6ff; }
+.date-chip .count { font-size:0.85em; color:#484f58; margin-left:4px; }
+.date-chip.active .count { color:#58a6ff; }
+.paper-list { margin-top:8px; }
+.paper-card {
+  background:#161b22; border:1px solid #21262d; border-radius:10px;
+  padding:14px; margin-bottom:14px;
+}
+.paper-title {
+  font-size:0.95em; font-weight:600; color:#f0f6fc; line-height:1.4;
+  margin-bottom:4px;
+}
+.paper-meta { font-size:0.75em; color:#58a6ff; margin-bottom:8px; }
+.paper-field { margin-top:8px; }
+.paper-field-label {
+  font-size:0.72em; color:#484f58; text-transform:uppercase;
+  letter-spacing:0.5px; margin-bottom:2px;
+}
+.paper-field-text {
+  font-size:0.84em; line-height:1.6; color:#c9d1d9;
+}
+.paper-actions {
+  display:flex; align-items:center; gap:8px; margin-top:10px;
+  padding-top:8px; border-top:1px solid #21262d;
+}
+.stars { display:flex; gap:2px; }
+.star {
+  font-size:1.2em; cursor:pointer; color:#30363d;
+  transition:color .1s;
+}
+.star.lit { color:#e3b341; }
+.fav-btn {
+  background:none; border:1px solid #30363d; border-radius:6px;
+  padding:4px 10px; font-size:0.8em; color:#8b949e; cursor:pointer;
+  transition:all .15s; margin-left:auto;
+}
+.fav-btn.faved { color:#da3633; border-color:#da3633; }
+.empty-field { color:#484f58; font-style:italic; }
+
+/* ── 收藏页 ── */
+.fav-empty { color:#484f58; text-align:center; padding:60px 20px; font-size:0.95em; }
+
+.empty { color:#484f58; text-align:center; padding:60px 20px; font-size:0.95em; }
+.footer {
+  text-align:center; color:#484f58; font-size:0.75em;
+  margin-top:32px; padding:16px; border-top:1px solid #21262d;
+}
+</style>
+</head>
+<body>
+<h1>🧬 科研仪表盘</h1>
+<div class="sub">更新于 2026-05-25 14:18 · 手机访问 → http://10.7.3.155:8080</div>
+
+<div class="tabs">
+  <button class="tab active" data-tab="fg" onclick="switchTab('fg')">FG 日报</button>
+  <button class="tab" data-tab="papers" onclick="switchTab('papers')">文献推送</button>
+  <button class="tab" data-tab="favs" onclick="switchTab('favs')">收藏</button>
+</div>
+
+<div id="panel-fg" class="panel active">
+  
+<div class="fg-entry">
+  <div class="fg-date">baseline</div>
+  <div class="fg-text" id="fg-baseline">FG 基线扫描 - 2026-05-25
+
+扫描时间：2026-05-25 12:21
+说明：首次全量扫描，记录每个 run 的当前状态作为基准。后续日报将与此对比。</div>
+  <span class="fg-toggle" id="btn-fg-baseline" onclick="toggleFG('fg-baseline')">展开全文</span>
+</div>
+</div>
+
+<div id="panel-papers" class="panel">
+  <div class="date-selector"><span class="date-chip" data-key="0" onclick="selectDate('0')">2026-05-24<span class="count">3篇 · DNA折纸聚合物</span></span><span class="date-chip" data-key="1" onclick="selectDate('1')">2026-05-24<span class="count">10篇 · 深度版</span></span></div>
+  <div id="paper-list"><div class="empty">选择日期查看文献</div></div>
+</div>
+
+<div id="panel-favs" class="panel">
+  <div id="fav-list"><div class="fav-empty">还没有收藏任何论文</div></div>
+</div>
+
+<div class="footer">Dashboard v2 · 评分 & 收藏存于浏览器本地</div>
+
+<script type="application/json" id="paper-data-json">[{"date": "2026-05-24", "label": "DNA折纸聚合物流变与电水力耦合", "papers": [{"title": "Rheology and Programmable Gelation of DNA Origami Polymer Tadpoles", "arxiv": "2605.21741", "rating": "⭐⭐⭐⭐⭐", "core": "用 DNA 折纸构建了线性/环形/\"蝌蚪\"三种拓扑的聚合物，研究了拓扑对浓溶液中流变和热致凝胶化的影响。核心发现：短链时流变标度普适，但热退火后拓扑决定交联行为——这是一个可编程的热响应凝胶化机制。", "abstract": "", "reason": "直接命中了三个核心兴趣点：（1）聚合物拓扑对粘弹性的影响，正好是 Rouse 模型工作的自然延伸——这里用 DNA 折纸做模型体系，拓扑精确可控，比合成聚合物干净得多；（2）topology-dependent crosslinking 的物理机制：热退火打开 DNA 二级结构、暴露 sticky ends，交联模式由拓扑决定——这是 non-trivial 的，因为直觉上热退火应该擦除拓扑记忆，但实际上它放大了拓扑差异；（3）DNA 作为\"可编程聚合物\"的概念：这篇不是做 DNA origami 的纳米结构折叠，而是把它当作聚合物物理的模型体系，思路很物理。Davide Michieletto 是做 polymer physics + chromatin 的，品质有保证。\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"}, {"title": "Electrohydraulic Fields Generated by Active Transport at Tissue Interfaces", "arxiv": "2605.22056", "rating": "⭐⭐⭐⭐", "core": "统一了细胞和组织界面上的电场、渗透压和流体流动，提出\"电水力耦合\"框架——离子泵浦产生长程电场和流场，偶极渗透压驱动自推进（机制不同于经典电泳/电渗），非线性耦合导致球壳各向同性膨胀（解释了类器官实验）。", "abstract": "", "reason": "（1）Frank Jülicher 是 active matter / biophysics theory 的标志性人物，这篇延续他做 concise theory 的风格——12 页、4 张图，把电、渗透、流三个物理场统一在一个框架里。（2）Non-trivial 的物理 insight：外部电场和内源偶极泵浦模式物理想等价，这意味着细胞可以用内部离子泵浦复现外部电场的效果——一个\"等价原理\"；自推进机制不同于电泳和电渗，是渗透耦合驱动的，这是一个新的物理。（3）最后一部分 spontaneous symmetry breaking 很漂亮：反馈导致系统自发破缺对称性产生偶极/多极场——这和你在 cohesin 工作中关心的对称破缺有相通之处。虽然这篇更偏细胞/组织尺度而非分子尺度，但理论框架的构建方式和物理 insight 值得参考。\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"}, {"title": "Thermodynamic cost-controllability tradeoff in metabolic currency coupling", "arxiv": "2602.01604", "rating": "⭐⭐⭐⭐", "core": "代谢货币（ATP, GTP, NAD(P)H 等）之间可以通过生化反应互换能量状态，导致它们耦合——作者构建了一个 minimal model，揭示了代谢可控性与热力学代价之间的根本 tradeoff：要提高多种货币的独立调控能力，必须付出更高的熵产生率。", "abstract": "", "reason": "（1）Minimal model 范本：17 页、9 张图，两个方程抓住核心 tradeoff——\"越可控越耗散\"，这是你喜欢的简洁而有 punchline 的类型。（2）Non-trivial 的机制：直觉上你可能觉得更多调控自由度总归是好的，但这篇告诉你代谢系统在简单环境中会放弃部分可控性来降低热耗散——环境复杂度驱动了代谢架构的演化方向。这和进化生物学的\"cost of complexity\"文献有对话。（3）有一个延伸的进化假说——核苷酸池平衡和基因组 GC 含量——虽然 speculative 但很有意思。注意这篇是 replacement（v2 更新于 5 月 20 日），不是全新投稿，但 quality 够高。\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"}]}, {"date": "2026-05-24", "label": "深度版", "papers": [{"title": "Coherent modeling of double-folded ring polymers and their underlying random tree structure", "arxiv": "2605.18355", "rating": "★★★★★", "core": "环状聚合物双折叠 ⇔ 随机树 —— 严格的熵等价。", "abstract": "拓扑约束的基因组类聚合物双折叠成树状构型。证明环状聚合物层面与随机树层面等价，等价性扩展到相互作用系统。", "reason": "cohesin是环+loop=交联拓扑网络。这篇证明环状聚合物⇔树在数学上等价——课题一的Rouse树框架可直接映射到课题二。"}, {"title": "Active Model B- from Mass-Conserving Reaction-Diffusion Systems", "arxiv": "2605.15903", "rating": "★★★★★", "core": "从三组分反应扩散系统推导出Active Model B-，自然产生微相分离图案。", "abstract": "最简三组分质量守恒反应扩散系统的晚期动力学约化为标量活性场论AMB-。密度依赖的界面系数在高密度下变负，驱动有限波长不稳定性和稳定的微相分离图案，而非无界粗化。", "reason": "Frey是活性物质/非平衡统计力学的大佬。这篇的核心——反应扩散→微相分离——和你cohesin的AB compartment微相分离物理图像惊人一致。你的嵌段共聚物类比是平衡态视角，这篇是非平衡版本。两者对话可能产生新insight。"}, {"title": "Function, Complexity and Thermodynamics in Adaptive and Intelligent Soft Matter Systems: An Information-Theoretical Formulation", "arxiv": "2605.19795", "rating": "★★★★", "core": "将响应/自适应/智能软物质系统统一为信息通道，定义复杂度度量。", "abstract": "将responsive、adaptive、intelligent统一为复杂度递增的信息通道。用信息论公式化三者之间的界限和热力学代价。", "reason": "你课题二中cohesin系统是非平衡自适应系统——这篇的信息论框架可能为cohesin调控的\"智能\"程度提供量化语言。不是直接相关，但理论视角非常有灵气。"}, {"title": "Rheology and Programmable Gelation of DNA Origami Polymer Tadpoles", "arxiv": "2605.21741", "rating": "★★★★", "core": "DNA折纸构建线/环/蝌蚪拓扑聚合物，拓扑决定流变学，交联可编程。", "abstract": "设计三种拓扑DNA纳米结构，致密条件下测量流变学。短链极限下遵循普适标度律，热退火后表现不同凝胶化行为。", "reason": "核心问题\"聚合物拓扑→流变学\"是课题一重心。\"可编程交联\"和随机交联形成完美对照。"}, {"title": "Microscopic Nonaffine Deformation Theory of LAOS in Polymers", "arxiv": "2605.21021", "rating": "★★★★", "core": "连接大振幅振荡剪切非线性与非仿射弛豫，用分子框架预测高次谐波。", "abstract": "建立分子驱动框架，将纠缠聚合物LAOS非线性连接到频率依赖的非仿射弛豫。一次谐波测量残余锁相弹性响应，高次谐波编码应变依赖的非仿射弛豫的傅里叶特征。", "reason": "Zaccone是非仿射弹性理论的主要推手。这篇直接连到聚合物黏弹性的非线性区——你的Rouse模型目前是线性的，非线性区域的理论可能是课题一的自然延伸。"}, {"title": "Self-organization and memory formation in two-dimensional jammed deformable matter under cyclic compression", "arxiv": "2605.22398", "rating": "★★★★", "core": "可变形环组装体在循环压缩下自组织形成记忆，多分散系统收敛到滞后极限环。", "abstract": "无热条件下可变形环组装体对准静态压缩的力学响应。过堵塞后环屈曲导致软化。循环压缩下多分散系统收敛到稳定滞后极限环——形成力学记忆。", "reason": "\"记忆形成\"和\"极限环\"是你FG弛豫分析的核心概念。这篇虽然不是聚合物，但力学记忆的形成机制可能给你的弛豫分析提供类比——FG弛豫是否也有类似的\"收敛到稳定路径\"特征？"}, {"title": "Anomalous Diffusion as Structural Memory: An Extended Structural Dynamics Approach", "arxiv": "2605.16337", "rating": "★★★★", "core": "亚扩散不是反常，是结构记忆——完整相空间（平动+取向+变形）投影到平动子空间产生记忆核。", "abstract": "生物系统亚扩散源于不完整相空间。ESD框架中每个粒子有平动/取向/变形自由度，投影到平动子空间自然产生记忆核。", "reason": "FG弛豫的R(s,t)本质是追踪结构记忆衰减。这篇提供第一性原理框架——不只标度指数，还能量化内部自由度和平动自由度的贡献。"}, {"title": "Actin cross-linking organizes basal body patterning through anomalous diffusion transitions", "arxiv": "2605.15912", "rating": "★★★★", "core": "肌动蛋白交联通过反常扩散转变组织基体图案——交联密度控制扩散模式切换。", "abstract": "亚细胞结构的动力学反映胞内环境的力学约束。反常扩散与布朗运动之间的转变对亚细胞组织至关重要。", "reason": "\"交联控制扩散模式\"是你课题的核心物理图像——交联拓扑决定弛豫谱。这篇虽然是细胞生物学层面，但物理逻辑和你的一致：交联密度→动力学转变。可以看看他们的分析方法能否平移。"}, {"title": "Interaction Controlled Molecular Probing of Length Scale Dependent Glassy Dynamics in Polymer Melts", "arxiv": "2605.21298", "rating": "★★★", "core": "探针-宿主相互作用强度决定聚合物熔体玻璃动力学的测量长度尺度。", "abstract": "用分子动力学模拟超冷聚合物熔体中稀探针二聚体，发现探针-宿主相互作用强度决定测量的动态异质性长度尺度。", "reason": "偏物理，和黏弹性相关。虽然不是生物物理方向，但聚合物弛豫的长度尺度依赖性对你的FG分析可能有用。"}, {"title": "The fracture resistance of elastic networks increases with the density of defects like a random walk", "arxiv": "2605.19684", "rating": "★★★", "core": "无序弹簧网络的断裂韧性随缺陷密度增加，遵循随机游走标度律。", "abstract": "无序弹簧网络是研究断裂的模型系统。表观断裂能随缺陷密度增加如随机游走。", "reason": "弹性网络+随机缺陷+标度律——虽然偏力学，但\"随机缺陷的标度律\"和你课题一的随机交联网络本征值分布共享同一数学基因：无序如何决定宏观响应。"}]}]</script>
+<script>
+// ── 数据加载（从 <script type="application/json"> 标签读取，避免注入问题） ──
+var PAPER_DATA = JSON.parse(document.getElementById('paper-data-json').textContent);
+var STORAGE_KEY = 'dashboard_v2';
+
+function loadState() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+  catch(e) { return {}; }
+}
+function saveState(s) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+}
+
+// ratings: {arxiv_id: stars}
+// favorites: [arxiv_id, ...]
+
+function getRating(arxiv) {
+  var s = loadState();
+  return (s.ratings && s.ratings[arxiv]) || 0;
+}
+function setRating(arxiv, stars) {
+  var s = loadState();
+  if (!s.ratings) s.ratings = {};
+  s.ratings[arxiv] = stars;
+  saveState(s);
+}
+function isFaved(arxiv) {
+  var s = loadState();
+  return s.favorites && s.favorites.indexOf(arxiv) >= 0;
+}
+function toggleFav(arxiv) {
+  var s = loadState();
+  if (!s.favorites) s.favorites = [];
+  var idx = s.favorites.indexOf(arxiv);
+  if (idx >= 0) { s.favorites.splice(idx, 1); }
+  else { s.favorites.push(arxiv); }
+  saveState(s);
+}
+
+// ── Tab 切换 ──
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelector('[data-tab="'+name+'"]').classList.add('active');
+  var panel = document.getElementById('panel-'+name);
+  if (panel) panel.classList.add('active');
+  if (name === 'favs') renderFavs();
+}
+
+// ── FG 展开/收起 ──
+function toggleFG(id) {
+  var el = document.getElementById(id);
+  var btn = document.getElementById('btn-'+id);
+  if (el.classList.contains('expanded')) {
+    el.classList.remove('expanded');
+    btn.textContent = '展开全文';
+  } else {
+    el.classList.add('expanded');
+    btn.textContent = '收起';
+  }
+}
+
+// ── 文献日期选择 ──
+var currentKey = null;
+function selectDate(key) {
+  if (key == null) return;
+  currentKey = key;
+  document.querySelectorAll('.date-chip').forEach(c => c.classList.remove('active'));
+  var chip = document.querySelector('[data-key="'+key+'"]');
+  if (chip) chip.classList.add('active');
+  renderPapers(parseInt(key));
+}
+
+function renderPapers(idx) {
+  var container = document.getElementById('paper-list');
+  if (!container) return;
+  var entry = PAPER_DATA[idx];
+  if (!entry) { container.innerHTML = '<div class="empty">暂无文献</div>'; return; }
+
+  var html = '';
+  entry.papers.forEach(function(p) {
+    var arxiv = p.arxiv || '';
+    var rating = getRating(arxiv);
+    var faved = isFaved(arxiv);
+
+    // unified card format: always show all 5 fields
+    var coreHtml = p.core ? esc(p.core) : '<span class="empty-field">（暂无）</span>';
+    var absHtml = p.abstract ? esc(p.abstract) : '<span class="empty-field">（暂无翻译）</span>';
+    var reasonHtml = p.reason ? esc(p.reason) : '<span class="empty-field">（暂无）</span>';
+
+    var starsHtml = '';
+    for (var s = 1; s <= 5; s++) {
+      var lit = s <= rating ? ' lit' : '';
+      starsHtml += '<span class="star'+lit+'">★</span>';
+    }
+
+    var favClass = faved ? ' faved' : '';
+    var favText = faved ? '❤ 已收藏' : '♡ 收藏';
+
+    html += '<div class="paper-card" data-arxiv="'+esc(arxiv)+'">';
+    html += '<div class="paper-title">' + esc(p.title) + '</div>';
+    html += '<div class="paper-meta">arxiv:' + esc(arxiv) + (p.rating ? '  ' + esc(p.rating) : '') + '</div>';
+    html += '<div class="paper-field"><div class="paper-field-label">核心洞察</div>';
+    html += '<div class="paper-field-text">' + coreHtml + '</div></div>';
+    html += '<div class="paper-field"><div class="paper-field-label">摘要翻译</div>';
+    html += '<div class="paper-field-text">' + absHtml + '</div></div>';
+    html += '<div class="paper-field"><div class="paper-field-label">推荐理由</div>';
+    html += '<div class="paper-field-text">' + reasonHtml + '</div></div>';
+    html += '<div class="paper-actions">';
+    html += '<div class="stars" data-arxiv="'+esc(arxiv)+'">' + starsHtml + '</div>';
+    html += '<button class="fav-btn'+favClass+'" data-arxiv="'+esc(arxiv)+'">' + favText + '</button>';
+    html += '</div></div>';
+  });
+  container.innerHTML = html;
+
+  // bind star click events (event delegation)
+  container.querySelectorAll('.stars').forEach(function(el) {
+    el.addEventListener('click', function(e) {
+      var star = e.target.closest('.star');
+      if (!star) return;
+      var idx = Array.from(el.children).indexOf(star);
+      var stars = idx + 1;
+      var arxiv = el.getAttribute('data-arxiv');
+      ratePaper(arxiv, stars);
+    });
+  });
+
+  // bind fav button events
+  container.querySelectorAll('.fav-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var arxiv = btn.getAttribute('data-arxiv');
+      toggleFav(arxiv);
+      if (currentKey != null) renderPapers(parseInt(currentKey));
+    });
+  });
+}
+
+function ratePaper(arxiv, stars) {
+  var current = getRating(arxiv);
+  if (stars === current) {
+    setRating(arxiv, 0);  // toggle off
+  } else {
+    setRating(arxiv, stars);
+  }
+  if (currentKey != null) renderPapers(parseInt(currentKey));
+}
+
+// ── 收藏页 ──
+function renderFavs() {
+  var container = document.getElementById('fav-list');
+  var s = loadState();
+  var favs = s.favorites || [];
+  if (favs.length === 0) {
+    container.innerHTML = '<div class="fav-empty">还没有收藏任何论文</div>';
+    return;
+  }
+  var allPapers = [];
+  PAPER_DATA.forEach(function(entry) {
+    entry.papers.forEach(function(p) {
+      if (favs.indexOf(p.arxiv) >= 0) {
+        allPapers.push({paper:p, date:entry.date, label:entry.label});
+      }
+    });
+  });
+  if (allPapers.length === 0) {
+    container.innerHTML = '<div class="fav-empty">还没有收藏任何论文</div>';
+    return;
+  }
+  var html = '';
+  allPapers.forEach(function(item) {
+    var p = item.paper;
+    html += '<div class="paper-card">';
+    html += '<div class="paper-title">' + esc(p.title) + '</div>';
+    html += '<div class="paper-meta">arxiv:' + esc(p.arxiv) + ' · ' + esc(item.date) + ' ' + esc(item.label) + '</div>';
+    if (p.core) {
+      html += '<div class="paper-field"><div class="paper-field-label">核心洞察</div>';
+      html += '<div class="paper-field-text">' + esc(p.core) + '</div></div>';
+    }
+    html += '</div>';
+  });
+  container.innerHTML = html;
+}
+
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+<script>document.addEventListener("DOMContentLoaded",function(){selectDate("0");});</script>
+</body>
+</html>
